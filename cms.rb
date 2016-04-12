@@ -36,7 +36,7 @@ helpers do
       headers["Content-Type"] = "text/plain"
       content
     elsif ext == ".md"
-      render_markdown(content)
+      erb render_markdown(content)
     end
   end
 end
@@ -67,7 +67,7 @@ get "/:filename" do
   if File.exist?(file_path)
     load_file_content(file_path)
   else
-    session[:error] = "#{params[:filename]} does not exist."
+    session[:message] = "#{params[:filename]} does not exist."
     redirect "/"
   end
 end

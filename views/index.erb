@@ -1,15 +1,8 @@
-<% if session[:error] %>
-  <div class="flash error">
-    <p><%= session.delete(:error) %></p>
-  </div>
-<% end %>
-
 <ul>
   <% @files.each do |file| %>
-    <li class="pure-menu-item">
-      <a href="<%= file %>"><%= file %></a>
-      <a class="edit" href="/<%= file %>/edit">Edit</a>
-
+    <li>
+      <a href="/<%= file %>"><%= file %></a>
+      <a href="/<%= file %>/edit">edit</a>
     </li>
   <% end %>
 </ul>
