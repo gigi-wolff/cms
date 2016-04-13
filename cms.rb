@@ -11,7 +11,6 @@ configure do
   set :erb, :escape_html => true
 end
 
-
 def data_path
   if ENV["RACK_ENV"] == "test"
     File.expand_path("../test/data", __FILE__)
@@ -29,18 +28,45 @@ helpers do
     markdown.render(text)
   end
 
-  def load_file_content(file_path)
-    ext = File.extname(file_path)
-    content = File.read(file_path)
-    if ext == ".txt"
+  def load_file_content(path)
+    content = File.read(path)
+    case File.extname(path)
+    when ".txt"
       headers["Content-Type"] = "text/plain"
       content
-    elsif ext == ".md"
+    when ".md"
       erb render_markdown(content)
     end
   end
 end
 
+#------- Signin --------
+#display sign in page
+get "/users/signin" do
+  erb :signin
+end
+
+#grab input from sign in page
+post "/users/signin" do
+  if params[:username] == "admin" && params[:password] == "secret"
+    session[:username] = params[:username]
+    session[:message] = "Welcome!"
+    redirect "/"
+  else
+    session[:message] = "Invalid credentials"
+    status 422
+    erb :signin
+  end
+end
+
+#------ Sign Out -------
+post "/users/signout" do
+  session.delete(:username)
+  session[:message] = "You have been signed out."
+  redirect "/"
+end
+
+#-------- Show ---------
 get "/" do
   "Getting Started"
   #Dir.glob("data/*") ===> ["data/about.txt", "data/changes.txt", "data/history.txt"] 
@@ -55,6 +81,8 @@ get "/" do
   erb :index
 end
 
+
+# -------- Read --------
 #Show contents of file
 get "/:filename" do
   #file = params[:filename]
@@ -72,6 +100,8 @@ get "/:filename" do
   end
 end
 
+
+# -------- Update -------
 # Edit contents of file
 get "/:filename/edit" do
   #file_path = root + "/data/" + params[:filename]
@@ -94,5 +124,36 @@ post "/:filename" do
 end
 
 
+#--------- Create --------
+# Render the new list form
+get "/new" do
+  erb :new, layout: :layout
+end
+
+# Create a new document
+post "/create" do
+  filename = params[:filename]
+
+  if filename.empty?
+    session[:message] = "A name is required"
+    status 422
+    erb :new, layout: :layout
+  else
+    file_path = File.join(data_path, params[:filename])  
+    File.write(file_path, "")
+    session[:message] = "The #{filename} has been created."
+    redirect "/"
+  end
+end
+
+
+# -------- Destroy --------
+# Delete a file
+post "/:filename/delete" do
+  file_path = File.join(data_path, params[:filename])  
+  File.delete(file_path)
+  session[:success] = "#{params[:filename]} has been deleted."
+  redirect "/"
+end
 
 
