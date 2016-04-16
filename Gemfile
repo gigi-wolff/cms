@@ -5,5 +5,6 @@ gem "sinatra-contrib"
 gem "erubis"
 gem "minitest"
 gem "redcarpet"
+gem "bcrypt"
 
 gem 'pry-nav', group: [:development, :test]

@@ -5,7 +5,7 @@ require "fileutils"
 require "minitest/autorun"
 require "rack/test"
 
-require_relative "../cms"
+require_relative "../cms/cms"
 
 class CMSTest < Minitest::Test
   include Rack::Test::Methods
@@ -103,7 +103,9 @@ class CMSTest < Minitest::Test
   def test_create_new_document
     post "/create", filename: "test.txt"
     assert_equal 302, last_response.status
-    assert_equal "test.txt has been created.", session[:message]
+
+    get last_response["Location"]
+    assert_includes last_response.body, "test.txt has been created"
 
     get "/"
     assert_includes last_response.body, "test.txt"

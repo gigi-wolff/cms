@@ -4,6 +4,8 @@ require "sinatra"
 require "sinatra/reloader"
 require "sinatra/content_for"
 require "tilt/erubis"
+require "yaml"
+require "bcrypt"
 
 configure do
   enable :sessions
@@ -15,7 +17,29 @@ def data_path
   if ENV["RACK_ENV"] == "test"
     File.expand_path("../test/data", __FILE__)
   else
+    # __FILE__ is cms.rb
+    # find path of cms.rb and add /data to it
     File.expand_path("../data", __FILE__)
+  end
+end
+
+def load_user_credentials
+  credentials_path = if ENV["RACK_ENV"] == "test"
+    File.expand_path("../test/users.yml", __FILE__)
+  else
+    File.expand_path("../users.yml", __FILE__)
+  end
+  YAML.load_file(credentials_path)
+end
+
+def valid_credentials?(username, password)
+  credentials = load_user_credentials
+
+  if credentials.key?(username)
+    bcrypt_password = BCrypt::Password.create(credentials[username])
+    bcrypt_password == password
+  else
+    false
   end
 end
 
@@ -48,8 +72,12 @@ end
 
 #grab input from sign in page
 post "/users/signin" do
-  if params[:username] == "admin" && params[:password] == "secret"
-    session[:username] = params[:username]
+  credentials = load_user_credentials
+  puts "credentials= #{credentials}"
+  username = params[:username]
+
+  if valid_credentials?(username, params[:password])
+    session[:username] = username
     session[:message] = "Welcome!"
     redirect "/"
   else
@@ -85,9 +113,6 @@ end
 # -------- Read --------
 #Show contents of file
 get "/:filename" do
-  #file = params[:filename]
-  #headers["Content-Type"] = "text/plain"
-  #@file = File.read("data/#{file}") 
   file_path = File.join(data_path, params[:filename])
 
   #file_path = root + "/data/" + params[:filename]
@@ -101,25 +126,24 @@ get "/:filename" do
 end
 
 
-# -------- Update -------
+# -------- Edit/Update -------
 # Edit contents of file
 get "/:filename/edit" do
-  #file_path = root + "/data/" + params[:filename]
-  file_path = File.join(data_path, params[:filename])
+  file_path = File.join(data_path, params[:filename])  
 
   @filename = params[:filename]
-  #@content = load_file_content(file_path)
   @content = File.read(file_path)
+
   erb :edit
 end
 
 # Update contents of file
 post "/:filename" do
-  #file_path = root + "/data/" + params[:filename]
-  file_path = File.join(data_path, params[:filename])
-  
+  file_path = File.join(data_path, params[:filename])  
+
   File.write(file_path, params[:content])
-  session[:message] = "#{params[:filename]} has been updated"
+
+  session[:message] = "#{params[:filename]} has been updated."
   redirect "/"
 end
 
@@ -127,21 +151,23 @@ end
 #--------- Create --------
 # Render the new list form
 get "/new" do
-  erb :new, layout: :layout
+  erb :new
 end
 
 # Create a new document
 post "/create" do
-  filename = params[:filename]
+  filename = params[:filename].to_s
 
-  if filename.empty?
-    session[:message] = "A name is required"
+  if filename.size == 0
+    session[:message] = "A name is required."
     status 422
-    erb :new, layout: :layout
+    erb :new
   else
-    file_path = File.join(data_path, params[:filename])  
+    file_path = File.join(data_path, filename)
+
     File.write(file_path, "")
-    session[:message] = "The #{filename} has been created."
+    session[:message] = "#{params[:filename]} has been created."
+
     redirect "/"
   end
 end
@@ -152,7 +178,7 @@ end
 post "/:filename/delete" do
   file_path = File.join(data_path, params[:filename])  
   File.delete(file_path)
-  session[:success] = "#{params[:filename]} has been deleted."
+  session[:message] = "#{params[:filename]} has been deleted."
   redirect "/"
 end
 
