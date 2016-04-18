@@ -4,6 +4,7 @@ require "fileutils"
 
 require "minitest/autorun"
 require "rack/test"
+require "pry"
 
 require_relative "../cms/cms"
 
@@ -103,7 +104,7 @@ class CMSTest < Minitest::Test
   def test_create_new_document
     post "/create", filename: "test.txt"
     assert_equal 302, last_response.status
-
+   
     get last_response["Location"]
     assert_includes last_response.body, "test.txt has been created"
 
@@ -113,6 +114,7 @@ class CMSTest < Minitest::Test
 
   def test_create_new_document_without_filename
     post "/create", filename: ""
+
     assert_equal 422, last_response.status
     assert_includes last_response.body, "A name is required"
   end
@@ -164,4 +166,5 @@ class CMSTest < Minitest::Test
     assert_includes last_response.body, "You have been signed out"
     assert_includes last_response.body, "Sign In"
   end
+
 end
