@@ -43,6 +43,16 @@ def valid_credentials?(username, password)
   end
 end
 
+def duplicate_file_name(filename)
+  version = '1' #default if first copy
+  last_char = filename[filename.index('.')-1]
+
+  #if last_char of filename an int then increment version number of filename
+  version = (last_char.to_i + 1).to_s unless /^\d+$/.match(last_char).nil? 
+
+  filename.gsub(last_char,version)
+end
+
 # root = "/Users/Gigi/cms"
 #root = File.expand_path("..", __FILE__)
 
@@ -171,7 +181,17 @@ post "/create" do
     redirect "/"
   end
 end
+# -------- Duplicate --------
+post "/:filename/duplicate" do
+  #require_signed_in_user
+  file_path_src = File.join(data_path, params[:filename])
+  file_path_dest = File.join(data_path, duplicate_file_name(params[:filename]))
+  
+  FileUtils.copy_file(file_path_src, file_path_dest)
 
+  session[:message] = "Duplicate created."
+  redirect "/"
+end
 
 # -------- Destroy --------
 # Delete a file
