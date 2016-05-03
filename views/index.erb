@@ -4,7 +4,10 @@
       <a href="/<%= file %>"><%= file %></a>
       <a href="/<%= file %>/edit">Edit</a>
       <form class="inline" method="post" action="<%= file %>/delete">
-        <button type="submit">delete</button>
+        <button type="submit">Delete</button>
+      </form>
+      <form class="inline" method="post" action="<%= file %>/duplicate">
+        <button type="submit">Duplicate</button>
       </form>
     </li>
   <% end %>
